@@ -1,0 +1,16 @@
+name: daniel_portal
+description: D.A.N.I.E.L.D.G.U.L.L.A - Electronic Triage and Navigation Portal for Katarungang Pambarangay (Flutter web).
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/

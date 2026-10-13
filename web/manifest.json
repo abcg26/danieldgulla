@@ -1,0 +1,11 @@
+{
+  "name": "D.A.N.I.E.L.D.G.U.L.L.A",
+  "short_name": "DANIELDGULLA",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#1A4DB3",
+  "theme_color": "#1A4DB3",
+  "description": "Electronic Triage and Navigation Portal for Katarungang Pambarangay",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false
+}
