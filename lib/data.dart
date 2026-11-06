@@ -1,4 +1,9 @@
+import 'dart:convert';
+
+import 'package:shared_preferences/shared_preferences.dart';
+
 class CaseRecord {
+  static const _notProvided = Object();
   final String id;
   final String date;
   final String filedAt;
@@ -10,11 +15,21 @@ class CaseRecord {
   final String status;
   final String action;
   final String narrative;
-  final int trackStep; // 0 Filed, 1 Under Review, 2 Mediation Set, 3 Resolved, 4 = all done
+  final int trackStep;
   final bool pwd;
   final String? accommodation;
   final String phone;
   final String barangay;
+  final bool? eligible;
+  final String? exclusion;
+  final String? recommendedAction;
+  final double? confidence;
+  final bool needsReview;
+  final List<String> ruleReasons;
+  final String officerNotes;
+  final String hearingAt;
+  final String hearingLocation;
+  final bool summonsDrafted;
 
   const CaseRecord({
     required this.id,
@@ -31,90 +46,258 @@ class CaseRecord {
     required this.trackStep,
     this.pwd = false,
     this.accommodation,
-    this.phone = '+63 917 123 4567',
-    this.barangay = 'Brgy. San Lorenzo',
+    this.phone = '',
+    this.barangay = '',
+    this.eligible,
+    this.exclusion,
+    this.recommendedAction,
+    this.confidence,
+    this.needsReview = false,
+    this.ruleReasons = const [],
+    this.officerNotes = '',
+    this.hearingAt = '',
+    this.hearingLocation = '',
+    this.summonsDrafted = false,
   });
+
+  CaseRecord copyWith({
+    String? aiCategory,
+    String? urgency,
+    String? stage,
+    String? status,
+    String? action,
+    int? trackStep,
+    Object? exclusion = _notProvided,
+    Object? recommendedAction = _notProvided,
+    double? confidence,
+    bool? eligible,
+    bool? needsReview,
+    List<String>? ruleReasons,
+    String? officerNotes,
+    String? hearingAt,
+    String? hearingLocation,
+    bool? summonsDrafted,
+  }) {
+    return CaseRecord(
+      id: id,
+      date: date,
+      filedAt: filedAt,
+      name: name,
+      category: category,
+      aiCategory: aiCategory ?? this.aiCategory,
+      urgency: urgency ?? this.urgency,
+      stage: stage ?? this.stage,
+      status: status ?? this.status,
+      action: action ?? this.action,
+      narrative: narrative,
+      trackStep: trackStep ?? this.trackStep,
+      pwd: pwd,
+      accommodation: accommodation,
+      phone: phone,
+      barangay: barangay,
+      eligible: eligible ?? this.eligible,
+      exclusion: identical(exclusion, _notProvided)
+          ? this.exclusion
+          : exclusion as String?,
+      recommendedAction: identical(recommendedAction, _notProvided)
+          ? this.recommendedAction
+          : recommendedAction as String?,
+      confidence: confidence ?? this.confidence,
+      needsReview: needsReview ?? this.needsReview,
+      ruleReasons: ruleReasons ?? this.ruleReasons,
+      officerNotes: officerNotes ?? this.officerNotes,
+      hearingAt: hearingAt ?? this.hearingAt,
+      hearingLocation: hearingLocation ?? this.hearingLocation,
+      summonsDrafted: summonsDrafted ?? this.summonsDrafted,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'date': date,
+        'filedAt': filedAt,
+        'name': name,
+        'category': category,
+        'aiCategory': aiCategory,
+        'urgency': urgency,
+        'stage': stage,
+        'status': status,
+        'action': action,
+        'narrative': narrative,
+        'trackStep': trackStep,
+        'pwd': pwd,
+        'accommodation': accommodation,
+        'phone': phone,
+        'barangay': barangay,
+        'eligible': eligible,
+        'exclusion': exclusion,
+        'recommendedAction': recommendedAction,
+        'confidence': confidence,
+        'needsReview': needsReview,
+        'ruleReasons': ruleReasons,
+        'officerNotes': officerNotes,
+        'hearingAt': hearingAt,
+        'hearingLocation': hearingLocation,
+        'summonsDrafted': summonsDrafted,
+      };
+
+  factory CaseRecord.fromJson(Map<String, dynamic> json) {
+    String stringValue(String key) {
+      final value = json[key];
+      if (value is! String) throw FormatException('Invalid case field: $key');
+      return value;
+    }
+
+    final trackStep = json['trackStep'];
+    final ruleReasons = json['ruleReasons'] ?? const <dynamic>[];
+    if (trackStep is! int ||
+        trackStep < 0 ||
+        trackStep > 4 ||
+        ruleReasons is! List ||
+        ruleReasons.any((reason) => reason is! String)) {
+      throw const FormatException('Invalid case progress data.');
+    }
+    final confidence = json['confidence'];
+    if (confidence != null &&
+        (confidence is! num || confidence < 0 || confidence > 1)) {
+      throw const FormatException('Invalid case confidence.');
+    }
+    final eligible = json['eligible'];
+    if (eligible != null && eligible is! bool) {
+      throw const FormatException('Invalid case eligibility.');
+    }
+
+    return CaseRecord(
+      id: stringValue('id'),
+      date: stringValue('date'),
+      filedAt: stringValue('filedAt'),
+      name: stringValue('name'),
+      category: stringValue('category'),
+      aiCategory: stringValue('aiCategory'),
+      urgency: stringValue('urgency'),
+      stage: stringValue('stage'),
+      status: stringValue('status'),
+      action: stringValue('action'),
+      narrative: stringValue('narrative'),
+      trackStep: trackStep,
+      pwd: json['pwd'] == true,
+      accommodation: json['accommodation'] as String?,
+      phone: stringValue('phone'),
+      barangay: stringValue('barangay'),
+      eligible: eligible as bool?,
+      exclusion: json['exclusion'] as String?,
+      recommendedAction: json['recommendedAction'] as String?,
+      confidence: confidence?.toDouble(),
+      needsReview: json['needsReview'] == true,
+      ruleReasons: List<String>.from(ruleReasons),
+      officerNotes: stringValue('officerNotes'),
+      hearingAt: stringValue('hearingAt'),
+      hearingLocation: stringValue('hearingLocation'),
+      summonsDrafted: json['summonsDrafted'] == true,
+    );
+  }
 }
 
 String fmtDate(DateTime d) {
-  const m = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const m = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec'
+  ];
   return '${m[d.month - 1]} ${d.day}, ${d.year}';
 }
 
 class CaseStore {
-  static final List<CaseRecord> cases = [
-    const CaseRecord(
-      id: 'KP-2026-004', date: 'Jan 12, 2026', filedAt: '10:14 AM', name: 'Estrella Lopez',
-      category: 'Noise (Videoke)', aiCategory: 'Noise disturbance', urgency: 'HIGH',
-      stage: 'Mediation', status: 'NEW', action: 'Issue Summons', trackStep: 2,
-      pwd: true, accommodation: 'Household accommodation requested for elderly grandmother.',
-      phone: '+63 918 765 4321',
-      narrative:
-          'Our neighbor continuously hosts noisy videoke sessions starting at 11 PM onwards, extending past barangay curfew hours. We tried approaching them peacefully last weekend, but it resulted in a verbal altercation. This is severely disrupting the rest and health of our elderly grandmother who requires quiet rest.',
-    ),
-    const CaseRecord(
-      id: 'KP-2026-003', date: 'Jan 11, 2026', name: 'Ricardo Santos', category: 'Property Boundary',
-      aiCategory: 'Land dispute', urgency: 'MEDIUM', stage: 'Conciliation', status: 'UNDER REVIEW',
-      action: 'Schedule Conciliation', trackStep: 1,
-      narrative: 'The adjoining lot owner moved the boundary marker about half a meter into my property during recent fence repairs.',
-    ),
-    const CaseRecord(
-      id: 'KP-2026-002', date: 'Jan 09, 2026', name: 'Amelia Cruz', category: 'Neighbor Dispute',
-      aiCategory: 'Interpersonal conflict', urgency: 'LOW', stage: 'Conciliation', status: 'RESOLVED',
-      action: 'View Settlement', trackStep: 4,
-      narrative: 'Repeated verbal disagreements with a neighbor over shared hallway use and cleanliness.',
-    ),
-    const CaseRecord(
-      id: 'KP-2026-001', date: 'Jan 08, 2026', name: 'Roberto Diaz', category: 'Infrastructure Damage',
-      aiCategory: 'Public impact', urgency: 'MEDIUM', stage: 'CFA Issued', status: 'ESCALATED',
-      action: 'View CFA', trackStep: 4,
-      narrative: "A neighbor's construction vehicle damaged the shared access road and the drainage cover.",
-    ),
-    const CaseRecord(
-      id: 'KP-2026-005', date: 'Jan 07, 2026', name: 'Maya Reyes', category: 'Water Supply Dispute',
-      aiCategory: 'Utility access', urgency: 'LOW', stage: 'Mediation', status: 'NEW',
-      action: 'Issue Summons', trackStep: 1,
-      narrative: 'A neighbor connected a secondary line to our water meter without consent, reducing our household supply.',
-    ),
-    const CaseRecord(
-      id: 'KP-2026-006', date: 'Jan 06, 2026', name: 'Leo Marquez', category: 'Fence Encroachment',
-      aiCategory: 'Property boundary', urgency: 'MEDIUM', stage: 'Conciliation', status: 'UNDER REVIEW',
-      action: 'Schedule Conciliation', trackStep: 1,
-      narrative: 'A newly built concrete fence extends beyond the agreed property line and blocks my side gate.',
-    ),
-    const CaseRecord(
-      id: 'KP-2026-007', date: 'Jan 05, 2026', name: 'Sofia Tan', category: 'Pet Disturbance',
-      aiCategory: 'Animal nuisance', urgency: 'LOW', stage: 'Mediation', status: 'RESOLVED',
-      action: 'View Settlement', trackStep: 4,
-      narrative: "Neighbor's dogs bark through the night and roam unleashed in the common area.",
-    ),
-    const CaseRecord(
-      id: 'KP-2026-008', date: 'Jan 04, 2026', name: 'Carlos Rivera', category: 'Drainage Obstruction',
-      aiCategory: 'Public works', urgency: 'MEDIUM', stage: 'CFA Issued', status: 'ESCALATED',
-      action: 'View CFA', trackStep: 4,
-      narrative: 'Debris from a nearby lot is blocking the shared drainage canal, causing flooding during rain.',
-    ),
-    const CaseRecord(
-      id: 'KP-2026-009', date: 'Jan 03, 2026', name: 'Nina Gomez', category: 'Shared Wall Damage',
-      aiCategory: 'Property damage', urgency: 'HIGH', stage: 'Arbitration', status: 'IN PROGRESS',
-      action: 'Schedule Arbitration', trackStep: 2,
-      narrative: 'Renovation work next door has cracked the shared wall and the repair cost remains unsettled.',
-    ),
-    const CaseRecord(
-      id: 'KP-2026-010', date: 'Jan 02, 2026', name: 'Mark Santos', category: 'Construction Noise',
-      aiCategory: 'Noise disturbance', urgency: 'LOW', stage: 'Conciliation', status: 'RESOLVED',
-      action: 'View Settlement', trackStep: 4,
-      narrative: 'Construction work started before permitted hours on multiple weekdays.',
-    ),
-  ];
+  static const _storageKey = 'daniel_portal.cases.v1';
+  static final List<CaseRecord> cases = [];
+  static SharedPreferences? _preferences;
+
+  static Future<void> initialize() async {
+    _preferences = await SharedPreferences.getInstance();
+    final stored = _preferences!.getString(_storageKey);
+    if (stored == null) return;
+
+    final decoded = jsonDecode(stored);
+    if (decoded is! List) {
+      throw const FormatException('Saved case data must be a list.');
+    }
+    final restored = <CaseRecord>[];
+    for (final item in decoded) {
+      if (item is! Map<String, dynamic>) {
+        throw const FormatException(
+            'Saved case data contains an invalid record.');
+      }
+      restored.add(CaseRecord.fromJson(item));
+    }
+    cases
+      ..clear()
+      ..addAll(restored);
+  }
+
+  static Future<void> add(CaseRecord record) async {
+    if (find(record.id) != null) {
+      throw StateError('A case with ID ${record.id} already exists.');
+    }
+    cases.insert(0, record);
+    try {
+      await _persist();
+    } catch (_) {
+      cases.removeAt(0);
+      rethrow;
+    }
+  }
+
+  static Future<void> update(CaseRecord record) async {
+    final index = cases.indexWhere((item) => item.id == record.id);
+    if (index < 0) throw StateError('Case ${record.id} was not found.');
+    final previous = cases[index];
+    cases[index] = record;
+    try {
+      await _persist();
+    } catch (_) {
+      cases[index] = previous;
+      rethrow;
+    }
+  }
+
+  static Future<void> _persist() async {
+    final preferences = _preferences;
+    if (preferences == null) {
+      throw StateError('Case storage has not been initialized.');
+    }
+    final saved = await preferences.setString(
+      _storageKey,
+      jsonEncode(cases.map((record) => record.toJson()).toList()),
+    );
+    if (!saved) throw StateError('Could not save cases to local storage.');
+  }
 
   static CaseRecord? find(String id) {
     final key = id.trim().toUpperCase();
-    for (final c in cases) {
-      if (c.id == key) return c;
+    for (final record in cases) {
+      if (record.id == key) return record;
     }
     return null;
   }
 
-  static String nextId() => 'KP-2026-${(cases.length + 1).toString().padLeft(3, '0')}';
+  static String nextId() {
+    final year = DateTime.now().year;
+    final prefix = 'KP-$year-';
+    var largest = 0;
+    for (final record in cases) {
+      if (!record.id.startsWith(prefix)) continue;
+      final sequence = int.tryParse(record.id.substring(prefix.length));
+      if (sequence != null && sequence > largest) largest = sequence;
+    }
+    return '$prefix${(largest + 1).toString().padLeft(3, '0')}';
+  }
 }

@@ -54,7 +54,7 @@ class LandingPage extends StatelessWidget {
           child: const Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('OFFICIAL GOVERNMENT SERVICE',
+              Text('BARANGAY CASE WORKSPACE',
                   style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.ink)),
               SizedBox(height: 3),
               Text('Powered by Advanced Analytics and\nLegal Guidelines',
@@ -63,12 +63,12 @@ class LandingPage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
-        Text('Official Portal for Katarungang Pambarangay',
+        Text('Case Triage for Katarungang Pambarangay',
             style: TextStyle(
                 fontSize: narrow ? 30 : 42, height: 1.15, fontWeight: FontWeight.w800, color: AppColors.ink)),
         const SizedBox(height: 18),
         const Text(
-          'An authorized online portal to guide you through the Katarungang Pambarangay process. Submit your grievance with guided input, receive automated case analysis based on RA 7160 standards, and monitor your case progress through to mediation and resolution.',
+          'File a barangay dispute, receive automated AI-assisted triage, and follow its status through the conciliation or referral workflow. Cases persist in this browser; this app is not an official government service.',
           style: TextStyle(fontSize: 14, height: 1.6, color: AppColors.body),
         ),
         const SizedBox(height: 26),

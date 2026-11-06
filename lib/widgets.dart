@@ -60,7 +60,8 @@ class AppCard extends StatelessWidget {
         border: Border.all(color: borderColor),
         borderRadius: BorderRadius.circular(4),
         boxShadow: const [
-          BoxShadow(color: Color(0x0F000000), blurRadius: 6, offset: Offset(0, 2)),
+          BoxShadow(
+              color: Color(0x0F000000), blurRadius: 6, offset: Offset(0, 2)),
         ],
       ),
       child: child,
@@ -73,16 +74,22 @@ class Pill extends StatelessWidget {
   final Color bg;
   final Color fg;
   final double fontSize;
-  const Pill(this.text, {super.key, required this.bg, required this.fg, this.fontSize = 9.5});
+  const Pill(this.text,
+      {super.key, required this.bg, required this.fg, this.fontSize = 9.5});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(3)),
+      decoration:
+          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(3)),
       child: Text(
         text,
-        style: TextStyle(color: fg, fontSize: fontSize, fontWeight: FontWeight.w700, letterSpacing: 0.3),
+        style: TextStyle(
+            color: fg,
+            fontSize: fontSize,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.3),
       ),
     );
   }
@@ -90,10 +97,16 @@ class Pill extends StatelessWidget {
 
 Widget urgencyPill(String u) {
   switch (u) {
+    case 'IMMEDIATE':
+      return const Pill('IMMEDIATE',
+          bg: Color(0xFFB42318), fg: AppColors.white);
     case 'HIGH':
       return const Pill('HIGH', bg: Color(0xFFFDE2E2), fg: Color(0xFFB42318));
     case 'MEDIUM':
       return const Pill('MEDIUM', bg: Color(0xFFFEF3C7), fg: Color(0xFF92400E));
+    case 'UNKNOWN':
+      return const Pill('UNKNOWN',
+          bg: Color(0xFFE5E7EB), fg: Color(0xFF4B5563));
     default:
       return const Pill('LOW', bg: Color(0xFFDCFCE7), fg: Color(0xFF166534));
   }
@@ -101,14 +114,24 @@ Widget urgencyPill(String u) {
 
 Widget statusPill(String s) {
   switch (s) {
+    case 'REFERRED':
+      return const Pill('REFERRED',
+          bg: Color(0xFFFFE4E6), fg: Color(0xFFBE123C));
     case 'RESOLVED':
-      return const Pill('RESOLVED', bg: Color(0xFFDCFCE7), fg: Color(0xFF166534));
+      return const Pill('RESOLVED',
+          bg: Color(0xFFDCFCE7), fg: Color(0xFF166534));
     case 'UNDER REVIEW':
-      return const Pill('UNDER REVIEW', bg: Color(0xFFFEF3C7), fg: Color(0xFF92400E));
+      return const Pill('UNDER REVIEW',
+          bg: Color(0xFFFEF3C7), fg: Color(0xFF92400E));
     case 'IN PROGRESS':
-      return const Pill('IN PROGRESS', bg: Color(0xFFFDE2E2), fg: Color(0xFFB42318));
+      return const Pill('IN PROGRESS',
+          bg: Color(0xFFFDE2E2), fg: Color(0xFFB42318));
     case 'ESCALATED':
-      return const Pill('ESCALATED', bg: Color(0xFFFFE4E6), fg: Color(0xFFBE123C));
+      return const Pill('ESCALATED',
+          bg: Color(0xFFFFE4E6), fg: Color(0xFFBE123C));
+    case 'AI UNAVAILABLE':
+      return const Pill('AI UNAVAILABLE',
+          bg: Color(0xFFFEF3C7), fg: Color(0xFF92400E));
     default:
       return const Pill('NEW', bg: Color(0xFFFDE2E2), fg: Color(0xFFB42318));
   }
@@ -133,7 +156,8 @@ class AppButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(2));
+    final shape =
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(2));
     final text = TextStyle(fontSize: fontSize, fontWeight: FontWeight.w700);
     if (outlined) {
       return OutlinedButton(
@@ -191,7 +215,11 @@ class FieldLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(bottom: 6),
-        child: Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.ink)),
+        child: Text(text,
+            style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AppColors.ink)),
       );
 }
 
@@ -206,18 +234,21 @@ class DashedRectPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
     final path = Path()
-      ..addRRect(RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(4)));
+      ..addRRect(RRect.fromRectAndRadius(
+          Offset.zero & size, const Radius.circular(4)));
     for (final metric in path.computeMetrics()) {
       double d = 0;
       while (d < metric.length) {
-        canvas.drawPath(metric.extractPath(d, math.min(d + 5, metric.length)), paint);
+        canvas.drawPath(
+            metric.extractPath(d, math.min(d + 5, metric.length)), paint);
         d += 9;
       }
     }
   }
 
   @override
-  bool shouldRepaint(covariant DashedRectPainter oldDelegate) => oldDelegate.color != color;
+  bool shouldRepaint(covariant DashedRectPainter oldDelegate) =>
+      oldDelegate.color != color;
 }
 
 // ---------------------------------------------------------------- public chrome
@@ -226,7 +257,11 @@ class BrandLogo extends StatelessWidget {
   final String subtitle;
   final bool serif;
   final double titleSize;
-  const BrandLogo({super.key, required this.subtitle, this.serif = false, this.titleSize = 14});
+  const BrandLogo(
+      {super.key,
+      required this.subtitle,
+      this.serif = false,
+      this.titleSize = 14});
 
   @override
   Widget build(BuildContext context) {
@@ -238,8 +273,10 @@ class BrandLogo extends StatelessWidget {
           Container(
             width: 32,
             height: 32,
-            decoration: const BoxDecoration(color: AppColors.white, shape: BoxShape.circle),
-            child: const Icon(Icons.balance, size: 18, color: AppColors.primary),
+            decoration: const BoxDecoration(
+                color: AppColors.white, shape: BoxShape.circle),
+            child:
+                const Icon(Icons.balance, size: 18, color: AppColors.primary),
           ),
           const SizedBox(width: 10),
           Flexible(
@@ -263,7 +300,11 @@ class BrandLogo extends StatelessWidget {
                   subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: AppColors.white, fontSize: 8.5, fontWeight: FontWeight.w600, letterSpacing: 0.4),
+                  style: const TextStyle(
+                      color: AppColors.white,
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.4),
                 ),
               ],
             ),
@@ -278,7 +319,11 @@ class PublicHeader extends StatelessWidget {
   final String active;
   final String subtitle;
   final bool serif;
-  const PublicHeader({super.key, required this.active, required this.subtitle, this.serif = false});
+  const PublicHeader(
+      {super.key,
+      required this.active,
+      required this.subtitle,
+      this.serif = false});
 
   static const List<List<String>> links = [
     ['Home', '/'],
@@ -302,23 +347,32 @@ class PublicHeader extends StatelessWidget {
               icon: const Icon(Icons.menu, color: AppColors.white),
               onSelected: (r) => go(context, r),
               itemBuilder: (_) => [
-                for (final l in links) PopupMenuItem<String>(value: l[1], child: Text(l[0])),
-                const PopupMenuItem<String>(value: '/officer', child: Text('Officer Portal')),
+                for (final l in links)
+                  PopupMenuItem<String>(value: l[1], child: Text(l[0])),
+                const PopupMenuItem<String>(
+                    value: '/officer', child: Text('Officer Portal')),
               ],
             )
           else
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                for (final l in links) _NavLink(label: l[0], route: l[1], active: l[1] == active),
+                for (final l in links)
+                  _NavLink(label: l[0], route: l[1], active: l[1] == active),
                 const SizedBox(width: 14),
                 InkWell(
                   onTap: () => go(context, '/officer'),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                    decoration: BoxDecoration(color: const Color(0x33FFFFFF), borderRadius: BorderRadius.circular(2)),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                    decoration: BoxDecoration(
+                        color: const Color(0x33FFFFFF),
+                        borderRadius: BorderRadius.circular(2)),
                     child: const Text('Officer Portal',
-                        style: TextStyle(color: AppColors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+                        style: TextStyle(
+                            color: AppColors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700)),
                   ),
                 ),
               ],
@@ -333,7 +387,8 @@ class _NavLink extends StatelessWidget {
   final String label;
   final String route;
   final bool active;
-  const _NavLink({required this.label, required this.route, required this.active});
+  const _NavLink(
+      {required this.label, required this.route, required this.active});
 
   @override
   Widget build(BuildContext context) {
@@ -346,9 +401,14 @@ class _NavLink extends StatelessWidget {
           children: [
             Text(label,
                 style: TextStyle(
-                    color: AppColors.white, fontSize: 12, fontWeight: active ? FontWeight.w700 : FontWeight.w400)),
+                    color: AppColors.white,
+                    fontSize: 12,
+                    fontWeight: active ? FontWeight.w700 : FontWeight.w400)),
             const SizedBox(height: 3),
-            Container(height: 2, width: 18, color: active ? AppColors.white : const Color(0x00FFFFFF)),
+            Container(
+                height: 2,
+                width: 18,
+                color: active ? AppColors.white : const Color(0x00FFFFFF)),
           ],
         ),
       ),
@@ -361,12 +421,18 @@ class PublicFooter extends StatelessWidget {
   final String? blurb;
   const PublicFooter({super.key, this.light = false, this.blurb});
 
-  Widget _col(String title, List<String> items, Color titleColor, Color linkColor) {
+  Widget _col(
+      String title, List<String> items, Color titleColor, Color linkColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(title, style: TextStyle(color: titleColor, fontSize: 9.5, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+        Text(title,
+            style: TextStyle(
+                color: titleColor,
+                fontSize: 9.5,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5)),
         const SizedBox(height: 10),
         for (final i in items)
           Padding(
@@ -389,15 +455,25 @@ class PublicFooter extends StatelessWidget {
       children: [
         if (light) ...[
           const Text('D.A.N.I.E.L.D.G.U.L.L.A',
-              style: TextStyle(color: AppColors.ink, fontSize: 12, fontWeight: FontWeight.w800)),
+              style: TextStyle(
+                  color: AppColors.ink,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800)),
           const SizedBox(height: 6),
           const Text('BARANGAY TRIAGE SYSTEM',
-              style: TextStyle(color: AppColors.muted, fontSize: 9, fontWeight: FontWeight.w600, letterSpacing: 0.4)),
+              style: TextStyle(
+                  color: AppColors.muted,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.4)),
         ] else ...[
-          const BrandLogo(subtitle: 'BARANGAY TRIAGE SYSTEM', serif: true, titleSize: 15),
+          const BrandLogo(
+              subtitle: 'BARANGAY TRIAGE SYSTEM', serif: true, titleSize: 15),
           if (blurb != null) ...[
             const SizedBox(height: 14),
-            Text(blurb!, style: const TextStyle(color: AppColors.white, fontSize: 11, height: 1.55)),
+            Text(blurb!,
+                style: const TextStyle(
+                    color: AppColors.white, fontSize: 11, height: 1.55)),
           ],
         ],
       ],
@@ -407,9 +483,14 @@ class PublicFooter extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _col('RESOURCES', ['Filing Guide', 'LGU Referrals', 'Barangay Law'], fg, link),
+        _col('RESOURCES', ['Filing Guide', 'LGU Referrals', 'Barangay Law'], fg,
+            link),
         const SizedBox(width: 48),
-        _col('GOVERNMENT LINKS', ['DILG Portal', 'Supreme Court (KP)', 'Official Gazette'], fg, link),
+        _col(
+            'GOVERNMENT LINKS',
+            ['DILG Portal', 'Supreme Court (KP)', 'Official Gazette'],
+            fg,
+            link),
       ],
     );
 
@@ -422,26 +503,36 @@ class PublicFooter extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (narrow)
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [left, const SizedBox(height: 24), cols])
+              Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [left, const SizedBox(height: 24), cols])
             else
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Flexible(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 380), child: left)),
+                  Flexible(
+                      child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 380),
+                          child: left)),
                   cols,
                 ],
               ),
             const SizedBox(height: 28),
-            Divider(height: 1, color: light ? AppColors.border : const Color(0x66FFFFFF)),
+            Divider(
+                height: 1,
+                color: light ? AppColors.border : const Color(0x66FFFFFF)),
             const SizedBox(height: 18),
             Wrap(
               alignment: WrapAlignment.spaceBetween,
               runSpacing: 8,
               children: [
-                Text('© 2026 Republic of the Philippines. All rights reserved.',
-                    style: TextStyle(color: light ? AppColors.muted : AppColors.white, fontSize: 10)),
-                Text('Privacy Policy · Accessibility Statement', style: TextStyle(color: link, fontSize: 10)),
+                Text('© 2026 D.A.N.I.E.L.D.G.U.L.L.A · Local case workspace',
+                    style: TextStyle(
+                        color: light ? AppColors.muted : AppColors.white,
+                        fontSize: 10)),
+                Text('Privacy Policy · Accessibility Statement',
+                    style: TextStyle(color: link, fontSize: 10)),
               ],
             ),
           ],
@@ -498,7 +589,11 @@ class AdminShell extends StatelessWidget {
   final bool light;
   final String active;
   final Widget child;
-  const AdminShell({super.key, required this.child, this.light = false, this.active = 'Dashboard'});
+  const AdminShell(
+      {super.key,
+      required this.child,
+      this.light = false,
+      this.active = 'Dashboard'});
 
   @override
   Widget build(BuildContext context) {
@@ -510,10 +605,12 @@ class AdminShell extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.white,
-          title: const Text('Lupon Tagapamayapa', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+          title: const Text('Lupon Tagapamayapa',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
         ),
         drawer: Drawer(width: 260, child: sidebar),
-        body: SingleChildScrollView(padding: const EdgeInsets.all(14), child: child),
+        body: SingleChildScrollView(
+            padding: const EdgeInsets.all(14), child: child),
       );
     }
     return Scaffold(
@@ -526,7 +623,9 @@ class AdminShell extends StatelessWidget {
               padding: const EdgeInsets.all(24),
               child: Align(
                 alignment: Alignment.topCenter,
-                child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 1180), child: child),
+                child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1180),
+                    child: child),
               ),
             ),
           ),
@@ -563,8 +662,6 @@ class AdminSidebar extends StatelessWidget {
           onTap: () {
             if (i.route != null) {
               go(context, i.route!);
-            } else {
-              toast(context, '${i.label} is not part of this prototype.');
             }
           },
           child: Container(
@@ -572,9 +669,17 @@ class AdminSidebar extends StatelessWidget {
             decoration: BoxDecoration(
               color: isActive ? activeBg : const Color(0x00000000),
               borderRadius: BorderRadius.circular(3),
-              border: Border.all(color: isActive && !light ? const Color(0x55FFFFFF) : const Color(0x00000000)),
+              border: Border.all(
+                  color: isActive && !light
+                      ? const Color(0x55FFFFFF)
+                      : const Color(0x00000000)),
               boxShadow: isActive && light
-                  ? const [BoxShadow(color: Color(0x14000000), blurRadius: 4, offset: Offset(0, 1))]
+                  ? const [
+                      BoxShadow(
+                          color: Color(0x14000000),
+                          blurRadius: 4,
+                          offset: Offset(0, 1))
+                    ]
                   : null,
             ),
             child: Row(
@@ -583,7 +688,10 @@ class AdminSidebar extends StatelessWidget {
                 const SizedBox(width: 10),
                 Text(i.label,
                     style: TextStyle(
-                        fontSize: 12, fontWeight: isActive ? FontWeight.w700 : FontWeight.w500, color: isActive ? activeFg : fg)),
+                        fontSize: 12,
+                        fontWeight:
+                            isActive ? FontWeight.w700 : FontWeight.w500,
+                        color: isActive ? activeFg : fg)),
               ],
             ),
           ),
@@ -598,7 +706,11 @@ class AdminSidebar extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(4, 14, 4, 8),
               child: Text(title,
                   style: TextStyle(
-                      fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.6, color: light ? AppColors.muted : const Color(0xB3FFFFFF))),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.6,
+                      color:
+                          light ? AppColors.muted : const Color(0xB3FFFFFF))),
             ),
             for (final i in items) item(i),
           ],
@@ -610,8 +722,11 @@ class AdminSidebar extends StatelessWidget {
               Container(
                 width: 28,
                 height: 28,
-                decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(3)),
-                child: const Icon(Icons.shield_outlined, size: 16, color: AppColors.white),
+                decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(3)),
+                child: const Icon(Icons.shield_outlined,
+                    size: 16, color: AppColors.white),
               ),
               const SizedBox(width: 8),
               const Expanded(
@@ -621,8 +736,15 @@ class AdminSidebar extends StatelessWidget {
                     Text('D.A.N.I.E.L.D.G.U.L.L.A',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.primary)),
-                    Text('BARANGAY TRIAGE SYSTEM', style: TextStyle(fontSize: 7.5, color: AppColors.muted, letterSpacing: 0.4)),
+                        style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primary)),
+                    Text('BARANGAY TRIAGE SYSTEM',
+                        style: TextStyle(
+                            fontSize: 7.5,
+                            color: AppColors.muted,
+                            letterSpacing: 0.4)),
                   ],
                 ),
               ),
@@ -640,24 +762,30 @@ class AdminSidebar extends StatelessWidget {
                       border: Border.all(color: const Color(0x99FFFFFF)),
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: const Icon(Icons.balance, size: 18, color: AppColors.white),
+                    child: const Icon(Icons.balance,
+                        size: 18, color: AppColors.white),
                   ),
                   const SizedBox(width: 10),
                   const Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Lupon Tagapamayapa',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.white)),
-                        Text('BRGY. SAN LORENZO · KP PORTAL',
-                            style: TextStyle(fontSize: 8, color: Color(0xCCFFFFFF), letterSpacing: 0.3)),
+                        Text('Barangay Case Portal',
+                            style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.white)),
+                        Text('LOCAL CASE WORKSPACE',
+                            style: TextStyle(
+                                fontSize: 8,
+                                color: Color(0xCCFFFFFF),
+                                letterSpacing: 0.3)),
                       ],
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 10),
-              const Text('Officer J. Cruz · Lupon Secretary', style: TextStyle(fontSize: 10, color: Color(0xCCFFFFFF))),
             ],
           );
 
@@ -665,30 +793,15 @@ class AdminSidebar extends StatelessWidget {
         ? [
             const SizedBox(height: 18),
             item(const _SideItem('Dashboard', Icons.grid_view, '/officer')),
-            item(const _SideItem('Complaints', Icons.description_outlined, '/officer/complaint')),
-            item(const _SideItem('Reports', Icons.bar_chart)),
-            item(const _SideItem('Settings', Icons.settings_outlined)),
+            item(const _SideItem(
+                'Complaints', Icons.description_outlined, '/officer')),
           ]
         : [
             section('DOCKETS AND CASES', const [
               _SideItem('Dashboard', Icons.grid_view, '/officer'),
               _SideItem('Complaints', Icons.description_outlined, '/officer'),
-              _SideItem('Active Dockets', Icons.folder_open_outlined, '/officer'),
-            ]),
-            section('LUPON SCHEDULE', const [
-              _SideItem('Schedule', Icons.calendar_today_outlined),
-              _SideItem('Hearings', Icons.gavel_outlined),
-            ]),
-            section('KP FORMS LIBRARY', const [
-              _SideItem('Forms', Icons.article_outlined),
-              _SideItem('Reports', Icons.bar_chart),
-            ]),
-            section('SYSTEM SETTINGS', const [
-              _SideItem('Settings', Icons.settings_outlined),
             ]),
           ];
-
-    final profileName = light ? 'Officer A. Guzman' : 'Officer J. Cruz';
 
     return Container(
       color: bg,
@@ -697,7 +810,9 @@ class AdminSidebar extends StatelessWidget {
         children: [
           Expanded(
             child: SingleChildScrollView(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [header, ...nav]),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [header, ...nav]),
             ),
           ),
           Container(
@@ -705,7 +820,8 @@ class AdminSidebar extends StatelessWidget {
             decoration: BoxDecoration(
               color: light ? AppColors.white : const Color(0x26FFFFFF),
               borderRadius: BorderRadius.circular(3),
-              border: Border.all(color: light ? AppColors.border : const Color(0x33FFFFFF)),
+              border: Border.all(
+                  color: light ? AppColors.border : const Color(0x33FFFFFF)),
             ),
             child: Row(
               children: [
@@ -717,17 +833,25 @@ class AdminSidebar extends StatelessWidget {
                     color: light ? const Color(0xFFDCE6F8) : AppColors.white,
                     borderRadius: BorderRadius.circular(3),
                   ),
-                  child: const Text('CO', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.primary)),
+                  child: const Icon(Icons.storage_outlined,
+                      size: 16, color: AppColors.primary),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(profileName,
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: light ? AppColors.ink : AppColors.white)),
-                      Text('Lupon Secretary',
-                          style: TextStyle(fontSize: 9.5, color: light ? AppColors.muted : const Color(0xCCFFFFFF))),
+                      Text('Saved on this browser',
+                          style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: light ? AppColors.ink : AppColors.white)),
+                      Text('Not synced across devices',
+                          style: TextStyle(
+                              fontSize: 9.5,
+                              color: light
+                                  ? AppColors.muted
+                                  : const Color(0xCCFFFFFF))),
                     ],
                   ),
                 ),

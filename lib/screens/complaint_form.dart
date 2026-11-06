@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../ai_service.dart';
 import '../data.dart';
 import '../theme.dart';
 import '../widgets.dart';
@@ -36,6 +37,7 @@ class _ComplaintFormPageState extends State<ComplaintFormPage> {
   String _barangay = _barangays.first;
   String _category = _categories.first;
   bool _pwd = false;
+  bool _submitting = false;
 
   @override
   void dispose() {
@@ -57,37 +59,110 @@ class _ComplaintFormPageState extends State<ComplaintFormPage> {
     });
   }
 
-  void _submit() {
+  static String _urgencyLabel(String urgency) {
+    switch (urgency.trim().toLowerCase()) {
+      case 'immediate intervention':
+      case 'immediate':
+        return 'IMMEDIATE';
+      case 'high':
+        return 'HIGH';
+      case 'low':
+        return 'LOW';
+      case 'medium':
+        return 'MEDIUM';
+      default:
+        throw const AiServiceException(
+            'The AI service returned an unknown urgency level.');
+    }
+  }
+
+  Future<void> _submit() async {
+    if (_submitting) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
+    final name = _name.text.trim();
+    final phone = _phone.text.trim();
+    final narrative = _narrative.text.trim();
+    final barangay =
+        _barangay.split(',').first.replaceFirst('Barangay', 'Brgy.');
+    final category = _category;
+    final priorityRequested = _pwd;
+    setState(() => _submitting = true);
+
+    TriageResult? analysis;
+    String? analysisError;
+    try {
+      analysis = await AiService.triage(narrative);
+      _urgencyLabel(analysis.urgency);
+    } on AiServiceException catch (error) {
+      analysis = null;
+      analysisError = error.message;
+    }
+    if (!mounted) return;
+
     final id = CaseStore.nextId();
-    CaseStore.cases.insert(
-      0,
-      CaseRecord(
-        id: id,
-        date: fmtDate(DateTime.now()),
-        filedAt: 'Just now',
-        name: _name.text.trim(),
-        category: _category,
-        aiCategory: 'Pending classification',
-        urgency: 'MEDIUM',
-        stage: 'Mediation',
-        status: 'NEW',
-        action: 'Issue Summons',
-        narrative: _narrative.text.trim(),
-        trackStep: 1,
-        pwd: _pwd,
-        accommodation: _pwd ? 'PWD / Senior Citizen priority conciliation requested.' : null,
-        phone: _phone.text.trim().isEmpty ? '—' : _phone.text.trim(),
-        barangay: _barangay.split(',').first.replaceFirst('Barangay', 'Brgy.'),
-      ),
+    final eligible = analysis?.eligible;
+    final record = CaseRecord(
+      id: id,
+      date: fmtDate(DateTime.now()),
+      filedAt: TimeOfDay.now().format(context),
+      name: name,
+      category: category,
+      aiCategory: analysis?.category ?? 'Analysis unavailable',
+      urgency: analysis == null ? 'UNKNOWN' : _urgencyLabel(analysis.urgency),
+      stage: analysis == null
+          ? 'AI Analysis Unavailable'
+          : eligible == false
+              ? 'Referral'
+              : 'Conciliation',
+      status: analysis == null
+          ? 'AI UNAVAILABLE'
+          : eligible == false
+              ? 'REFERRED'
+              : 'IN PROGRESS',
+      action: 'Open Case',
+      narrative: narrative,
+      trackStep: analysis == null ? 1 : (eligible == false ? 4 : 2),
+      pwd: priorityRequested,
+      accommodation: priorityRequested
+          ? 'PWD / Senior Citizen priority conciliation requested.'
+          : null,
+      phone: phone.isEmpty ? '—' : phone,
+      barangay: barangay,
+      eligible: analysis?.eligible,
+      exclusion: analysis?.exclusion,
+      recommendedAction: analysis?.recommendedAction,
+      confidence: analysis?.minConfidence,
+      needsReview: analysis?.needsStaffReview ?? false,
+      ruleReasons: analysis?.ruleReasons ?? const [],
     );
+    try {
+      await CaseStore.add(record);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _submitting = false);
+      toast(context, 'Could not save your case: $error');
+      return;
+    }
+    setState(() => _submitting = false);
+
+    final analysisSummary = analysis == null
+        ? '\n\nAI analysis was unavailable: $analysisError\nYour case is saved. Open it later and retry the analysis.'
+        : analysis.eligible
+            ? '\n\nAI triage completed: ${analysis.category}, ${analysis.urgency.toLowerCase()} urgency. The case is now in the conciliation workflow.'
+            : '\n\nAI triage recommends referral: ${analysis.exclusion ?? analysis.recommendedAction}. The case is flagged as referred.';
+    if (!mounted) return;
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Grievance record submitted', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
-        content: Text('Your Case ID is $id.\nKeep this number to track your complaint. A Lupon officer will review your record.'),
+        title: const Text('Grievance record submitted',
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+        content: Text(
+          'Your Case ID is $id.\nKeep this number to track your complaint.$analysisSummary',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Close')),
+          TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Close')),
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
@@ -100,7 +175,8 @@ class _ComplaintFormPageState extends State<ComplaintFormPage> {
     );
   }
 
-  Widget _dropdown(String label, List<String> items, String value, ValueChanged<String> onChanged) {
+  Widget _dropdown(String label, List<String> items, String value,
+      ValueChanged<String> onChanged) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -113,7 +189,11 @@ class _ComplaintFormPageState extends State<ComplaintFormPage> {
               isExpanded: true,
               isDense: true,
               style: const TextStyle(fontSize: 12, color: AppColors.ink),
-              items: [for (final e in items) DropdownMenuItem<String>(value: e, child: Text(e, overflow: TextOverflow.ellipsis))],
+              items: [
+                for (final e in items)
+                  DropdownMenuItem<String>(
+                      value: e, child: Text(e, overflow: TextOverflow.ellipsis))
+              ],
               onChanged: (v) {
                 if (v != null) onChanged(v);
               },
@@ -128,32 +208,13 @@ class _ComplaintFormPageState extends State<ComplaintFormPage> {
   Widget build(BuildContext context) {
     final narrow = isNarrow(context);
     const helper = TextStyle(fontSize: 10, color: AppColors.muted);
-    const sectionStyle = TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.ink);
+    const sectionStyle = TextStyle(
+        fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.ink);
 
-    final brgyField = _dropdown('Barangay Location', _barangays, _barangay, (v) => setState(() => _barangay = v));
-    final catField = _dropdown('Complaint Category', _categories, _category, (v) => setState(() => _category = v));
-
-    final upload = InkWell(
-      onTap: () => toast(context, 'File selection is not available in this prototype.'),
-      child: CustomPaint(
-        painter: DashedRectPainter(const Color(0xFFC9CED6)),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 30),
-          color: const Color(0xFFFAFAFB),
-          child: const Column(
-            children: [
-              Icon(Icons.cloud_upload_outlined, size: 24, color: AppColors.muted),
-              SizedBox(height: 8),
-              Text('Click to upload or drag & drop files',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.ink)),
-              SizedBox(height: 3),
-              Text('MP4, MP3, WAV, JPG or PNG up to 25MB', style: TextStyle(fontSize: 9.5, color: AppColors.muted)),
-            ],
-          ),
-        ),
-      ),
-    );
+    final brgyField = _dropdown('Barangay Location', _barangays, _barangay,
+        (v) => setState(() => _barangay = v));
+    final catField = _dropdown('Complaint Category', _categories, _category,
+        (v) => setState(() => _category = v));
 
     final form = Form(
       key: _formKey,
@@ -169,10 +230,14 @@ class _ComplaintFormPageState extends State<ComplaintFormPage> {
               controller: _name,
               style: const TextStyle(fontSize: 12),
               decoration: inputDec(hint: 'e.g. Juan dela Cruz'),
-              validator: (v) => (v == null || v.trim().isEmpty) ? 'Full name is required' : null,
+              validator: (v) => (v == null || v.trim().isEmpty)
+                  ? 'Full name is required'
+                  : null,
             ),
             const SizedBox(height: 4),
-            const Text('Enter legal name as indicated on your government-issued ID.', style: helper),
+            const Text(
+                'Enter legal name as indicated on your government-issued ID.',
+                style: helper),
             const SizedBox(height: 16),
             const FieldLabel('Contact Number'),
             TextFormField(
@@ -186,10 +251,18 @@ class _ComplaintFormPageState extends State<ComplaintFormPage> {
             const SizedBox(height: 22),
             const Text('2. Dispute Context', style: sectionStyle),
             const SizedBox(height: 16),
-            if (narrow) ...[brgyField, const SizedBox(height: 14), catField] else
+            if (narrow) ...[
+              brgyField,
+              const SizedBox(height: 14),
+              catField
+            ] else
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [Expanded(child: brgyField), const SizedBox(width: 16), Expanded(child: catField)],
+                children: [
+                  Expanded(child: brgyField),
+                  const SizedBox(width: 16),
+                  Expanded(child: catField)
+                ],
               ),
             const SizedBox(height: 16),
             const FieldLabel('Detailed Complaint Narrative'),
@@ -198,14 +271,30 @@ class _ComplaintFormPageState extends State<ComplaintFormPage> {
               minLines: 4,
               maxLines: 6,
               style: const TextStyle(fontSize: 12),
-              decoration: inputDec(hint: 'Describe what happened, who is involved, and when it occurred.'),
-              validator: (v) => (v == null || v.trim().length < 10) ? 'Please describe the dispute (at least 10 characters)' : null,
+              decoration: inputDec(
+                  hint:
+                      'Describe what happened, who is involved, and when it occurred.'),
+              validator: (v) {
+                final text = v?.trim() ?? '';
+                if (text.length < 10) {
+                  return 'Please describe the dispute (at least 10 characters)';
+                }
+                if (text.length > 10000) {
+                  return 'Please keep the complaint under 10,000 characters';
+                }
+                return null;
+              },
             ),
             const SizedBox(height: 4),
-            const Text('Provide specific dates, times, and prior attempts at peaceful resolution.', style: helper),
+            const Text(
+                'Provide specific dates, times, and prior attempts at peaceful resolution.',
+                style: helper),
             const SizedBox(height: 16),
-            const FieldLabel('Supporting Evidence (Videos, Audio, Photos)'),
-            upload,
+            const FieldLabel('Supporting Evidence'),
+            const Text(
+              'Evidence upload is not available yet. Include relevant details in your narrative.',
+              style: helper,
+            ),
             const SizedBox(height: 26),
             Container(
               padding: const EdgeInsets.all(12),
@@ -227,16 +316,27 @@ class _ComplaintFormPageState extends State<ComplaintFormPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Request PWD / Senior Citizen Priority Conciliation',
-                            style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.ink)),
+                        Text(
+                            'Request PWD / Senior Citizen Priority Conciliation',
+                            style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.ink)),
                         SizedBox(height: 2),
-                        Text('Enable this for physical accessibility accommodations, sign language interpreters, or home visit audits.',
-                            style: TextStyle(fontSize: 10, color: AppColors.body)),
+                        Text(
+                            'Enable this for physical accessibility accommodations, sign language interpreters, or home visit audits.',
+                            style:
+                                TextStyle(fontSize: 10, color: AppColors.body)),
                       ],
                     ),
                   ),
                 ],
               ),
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'Your case is saved only in this browser. The complaint narrative is sent to the configured AI service for triage; name and phone number are not sent.',
+              style: TextStyle(fontSize: 10, height: 1.5, color: AppColors.muted),
             ),
             const SizedBox(height: 18),
             Row(
@@ -245,10 +345,17 @@ class _ComplaintFormPageState extends State<ComplaintFormPage> {
                 TextButton(
                   onPressed: _clear,
                   child: const Text('Clear Form',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.ink)),
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.ink)),
                 ),
-                AppButton('Submit Grievance Record',
-                    padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 16), onPressed: _submit),
+                AppButton(
+                  _submitting ? 'Analyzing...' : 'Submit Grievance Record',
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 26, vertical: 16),
+                  onPressed: _submitting ? null : _submit,
+                ),
               ],
             ),
           ],
@@ -261,11 +368,16 @@ class _ComplaintFormPageState extends State<ComplaintFormPage> {
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Submit a Dispute Record', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.ink)),
+          Text('Submit a Dispute Record',
+              style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.ink)),
           SizedBox(height: 10),
           Text(
             'Please fill out all relevant sections completely. The D.A.N.I.E.L.D.G.U.L.L.A algorithm will evaluate whether this complaint falls directly under your local Barangay jurisdiction or requires LGU elevation.',
-            style: TextStyle(fontSize: 11.5, height: 1.55, color: AppColors.body),
+            style:
+                TextStyle(fontSize: 11.5, height: 1.55, color: AppColors.body),
           ),
         ],
       ),
@@ -277,7 +389,8 @@ class _ComplaintFormPageState extends State<ComplaintFormPage> {
       footerLight: true,
       child: Boxed(
         maxWidth: 720,
-        padding: EdgeInsets.symmetric(horizontal: narrow ? 14 : 24, vertical: 36),
+        padding:
+            EdgeInsets.symmetric(horizontal: narrow ? 14 : 24, vertical: 36),
         child: Column(children: [intro, const SizedBox(height: 18), form]),
       ),
     );
